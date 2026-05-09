@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MIO | Mining IoT Overview</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@100..900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+<script src="mqtt.min.js"></script>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+body{
+font-family:'Jost';
+background:linear-gradient(135deg,#fff7ed,#fef3c7,#fffbeb);
+color:#1e293b;
+scroll-behavior:smooth;
+overflow-x:hidden;
+position:relative;
+}
+
+body::before{
+content:"";
+position:fixed;
+inset:0;
+background:
+radial-gradient(circle at top left,rgba(245,158,11,0.08),transparent 30%),
+radial-gradient(circle at bottom right,rgba(251,146,60,0.08),transparent 30%);
+pointer-events:none;
+animation:bgPulse 10s ease-in-out infinite;
+z-index:-2;
+}
+
+@keyframes bgPulse{
+0%{transform:scale(1);opacity:0.5;}
+50%{transform:scale(1.08);opacity:1;}
+100%{transform:scale(1);opacity:0.5;}
+}
+
+/* NAVBAR */
+.navbar{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+padding:4px 20px;
+background:rgba(255, 255, 255, 0.7);
+backdrop-filter:blur(14px);
+display:flex;
+justify-content:space-between;
+align-items:center;
+z-index:1000;
+border-bottom:1px solid rgba(253,230,138,0.35);
+box-shadow:0 8px 30px rgba(0,0,0,0.06);
+}
+
+.nav-links{
+display:flex;
+align-items:center;
+gap:12px;
+}
+
+.nav-links a{
+text-decoration:none;
+color:#92400e;
+padding:10px 18px;
+border-radius:12px;
+font-weight:500;
+font-size:17px;
+transition:all 0.3s ease;
+position:relative;
+overflow:hidden;
+}
+
+.nav-links a:hover{
+background:rgba(245,158,11,0.15);
+color:#f59e0b;
+transform:translateY(-2px);
+box-shadow:0 6px 15px rgba(245,158,11,0.15);
+}
+
+/* navbar glow removed */
+
+.logo-container{
+display:flex;
+align-items:center;
+gap:1px;
+}
+
+
+.logo-container{
+display:flex;
+align-items:center;
+gap:10px;
+}
+
+.logo-img{
+width:80px;
+height:80px;
+object-fit:contain;
+}
+
+.logo-text{
+font-weight:800;
+color:#f59e0b;
+font-size:22px;
+line-height:1;
+animation:logoGlow 3s infinite alternate;
+}
+
+@keyframes logoGlow{
+0%{text-shadow:0 0 5px rgba(245,158,11,0.2);}
+100%{text-shadow:0 0 20px rgba(245,158,11,0.7);}
+}
+
+.logo-text small{
+display:block;
+font-size:18px;
+color:#92400e;
+}
+
+.nav-links a{
+text-decoration:none;
+color:#92400e;
+margin-left:20px;
+padding:6px 12px;
+border-radius:8px;
+transition:0.3s;
+position:relative;
+overflow:hidden;
+}
+
+.nav-links a::before{
+content:"";
+position:absolute;
+left:-100%;
+top:0;
+width:100%;
+height:100%;
+background:rgba(245,158,11,0.15);
+transition:0.4s;
+}
+
+.nav-links a:hover::before{
+left:0;
+}
+
+.nav-links a:hover{
+background:#fde68aca;
+transform:translateY(-2px);
+}
+
+/* SECTION */
+.section{
+padding:120px 80px 80px;
+transition:1s;
+}
+
+/* WELCOME */
+.welcome{
+height:100vh;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+text-align:center;
+background:linear-gradient(160deg,#fff7ed49,#fef3c73e);
+position:relative;
+padding:0 20px;
+}
+
+.welcome::after{
+content:"";
+position:absolute;
+width:450px;
+height:450px;
+background:rgba(245,158,11,0.15);
+border-radius:50%;
+filter:blur(120px);
+top:30%;
+left:50%;
+transform:translateX(-50%);
+}
+
+.welcome-content{
+max-width:750px;
+z-index:2;
+}
+
+.welcome h1{
+font-size:55px;
+margin-bottom:16px;
+line-height:1.2;
+animation:titleGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes titleGlow{
+0%{text-shadow:0 0 10px rgba(245,158,11,0.2);}
+100%{text-shadow:0 0 30px rgba(245,158,11,0.7);}
+}
+
+.welcome span{
+color:#f59e0b;
+}
+
+.welcome p{
+font-size:22px;
+color:#78350f;
+line-height:1.7;
+}
+
+/* MONITOR */
+
+.monitor-container{
+display:flex;
+gap:40px;
+}
+
+/* SCROLL */
+.reveal{
+opacity:0;
+transform:translateY(40px);
+transition:all 0.9s ease;
+}
+
+.reveal.active{
+opacity:1;
+transform:translateY(0);
+}
+
+/* DATA CARD */
+.data-section{
+flex:1;
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:20px;
+}
+
+.card{
+background:linear-gradient(145deg,#ffffff,#fff7ed);
+padding:25px;
+border-radius:18px;
+box-shadow:0 10px 25px rgba(0,0,0,0.08);
+transition:0.3s;
+cursor:pointer;
+opacity:0;
+transform:translateY(40px);
+border:1px solid #fde68a;
+position:relative;
+overflow:hidden;
+animation:floatCard 5s ease-in-out infinite;
+}
+
+.card:nth-child(2){animation-delay:1s;}
+.card:nth-child(3){animation-delay:2s;}
+.card:nth-child(4){animation-delay:3s;}
+
+@keyframes floatCard{
+0%{transform:translateY(0px);} 
+50%{transform:translateY(-10px);} 
+100%{transform:translateY(0px);} 
+}
+
+.card::before{
+content:"";
+position:absolute;
+inset:0;
+border-radius:18px;
+padding:1px;
+background:linear-gradient(45deg,#f59e0b,#fde68a,#f59e0b);
+-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+-webkit-mask-composite:xor;
+mask-composite:exclude;
+opacity:0;
+transition:0.4s;
+}
+
+.card:hover::before{
+opacity:1;
+}
+
+.card.active{
+opacity:1;
+transform:translateY(0);
+}
+
+.card:hover{
+transform:translateY(-6px);
+box-shadow:0 18px 35px rgba(245,158,11,0.25);
+}
+
+.card.expanded{
+transform:scale(1.08);
+}
+
+.card h4{
+color:#92400e;
+margin-bottom:8px;
+}
+
+.value{
+font-size:26px;
+font-weight:700;
+color:#f59e0b;
+position:relative;
+overflow:hidden;
+}
+
+.value::after{
+content:"";
+position:absolute;
+top:0;
+left:-100%;
+width:60%;
+height:100%;
+background:linear-gradient(90deg,transparent,rgba(255,255,255,0.5),transparent);
+animation:shimmer 3s infinite;
+}
+
+@keyframes shimmer{
+100%{left:150%;}
+}
+
+.chart-section{
+flex:1.3;
+background:linear-gradient(145deg,#ffffff,#fff7ed);
+padding:30px;
+border-radius:18px;
+box-shadow:0 10px 25px rgba(0,0,0,0.08);
+border:1px solid #fde68a;
+position:relative;
+}
+
+.chart-section::before{
+content:"";
+position:absolute;
+inset:-2px;
+background:linear-gradient(45deg,#f59e0b,#fde68a,#fb923c,#f59e0b);
+background-size:400% 400%;
+z-index:-1;
+filter:blur(15px);
+opacity:0;
+transition:0.5s;
+animation:borderFlow 8s linear infinite;
+border-radius:20px;
+}
+
+.chart-section:hover::before{
+opacity:0.8;
+}
+
+@keyframes borderFlow{
+0%{background-position:0% 50%;}
+50%{background-position:100% 50%;}
+100%{background-position:0% 50%;}
+}
+
+canvas{
+filter:drop-shadow(0 0 10px rgba(245,158,11,0.25));
+}
+
+.buzzer-panel{
+margin-top:40px;
+padding:30px;
+background:linear-gradient(145deg,#ffffff,#fff7ed);
+border-radius:20px;
+display:flex;
+align-items:center;
+justify-content:center;
+gap:20px;
+box-shadow:0 10px 25px rgba(0,0,0,0.08);
+}
+
+.buzzer-indicator{
+width:45px;
+height:45px;
+border-radius:50%;
+background:#22c55e;
+box-shadow:0 0 20px #22c55e;
+animation:breathe 2s infinite;
+}
+
+@keyframes breathe{
+0%{transform:scale(1);} 
+50%{transform:scale(1.15);} 
+100%{transform:scale(1);} 
+}
+
+.buzzer-text{
+font-size:22px;
+font-weight:600;
+}
+
+.alert-light{
+background:#ef4444;
+box-shadow:0 0 30px #ef4444;
+}
+
+.alert-mode{
+animation:shake 0.4s infinite;
+}
+
+@keyframes shake{
+0%{transform:translateX(0);}
+25%{transform:translateX(-4px);}
+50%{transform:translateX(4px);}
+75%{transform:translateX(-4px);}
+100%{transform:translateX(0);}
+}
+
+#mining-particles,
+#floating-orbs{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+pointer-events:none;
+z-index:0;
+overflow:hidden;
+}
+
+.dust{
+position:absolute;
+width:10px;
+height:10px;
+background:rgba(250, 104, 0, 0.989);
+border-radius:50%;
+animation:dustMove linear infinite;
+}
+
+@keyframes dustMove{
+0%{transform:translateY(0) translateX(0) scale(1);opacity:0;}
+20%{opacity:0.6;}
+50%{transform:translateY(-60px) translateX(10px) scale(0.9);}
+100%{transform:translateY(-140px) translateX(-10px) scale(0.6);opacity:0;}
+}
+
+.orb{
+position:absolute;
+width:120px;
+height:120px;
+background:radial-gradient(circle,#f59e0b33,#f59e0b00);
+border-radius:50%;
+filter:blur(2px);
+animation:floatOrb linear infinite;
+box-shadow:0 0 20px rgba(245,158,11,0.3);
+}
+
+@keyframes floatOrb{
+0%{transform:translateY(0) translateX(0);}
+50%{transform:translateY(-80px) translateX(40px);}
+100%{transform:translateY(0) translateX(0);}
+}
+
+/* meteor animation removed */
+
+.click-ripple{
+position:fixed;
+border-radius:50%;
+background:rgba(245,158,11,0.25);
+transform:translate(-50%,-50%);
+pointer-events:none;
+animation:rippleAnim 0.7s linear forwards;
+z-index:9999;
+}
+
+@keyframes rippleAnim{
+0%{width:0;height:0;opacity:1;}
+100%{width:220px;height:220px;opacity:0;}
+}
+
+.float-icon{
+position:fixed;
+font-size:20px;
+color:rgba(245,158,11,0.4);
+pointer-events:none;
+z-index:1;
+animation:floatUp linear forwards;
+}
+
+@keyframes floatUp{
+0%{transform:translateY(0) scale(0.5);opacity:0;}
+20%{opacity:1;}
+100%{transform:translateY(-220px) scale(1.4);opacity:0;}
+}
+
+.mouse-light{
+position:fixed;
+width:250px;
+height:250px;
+border-radius:50%;
+background:radial-gradient(circle,rgba(245,158,11,0.15),transparent 70%);
+pointer-events:none;
+transform:translate(-50%,-50%);
+z-index:999;
+mix-blend-mode:screen;
+}
+
+.about-container{
+display:flex;
+align-items:center;
+justify-content:center;
+gap:40px;
+flex-wrap:wrap;
+}
+
+.about-title-card,
+.about-desc-card{
+background:linear-gradient(145deg,#ffffff,#fff7ed);
+padding:35px;
+border-radius:24px;
+box-shadow:0 10px 25px rgba(0,0,0,0.08);
+transition:all 0.4s ease;
+border:1px solid #fde68a;
+}
+
+.about-title-card{
+min-width:280px;
+text-align:center;
+}
+
+.about-title-card h2{
+font-size:42px;
+color:#92400e;
+}
+
+.about-desc-card{
+max-width:700px;
+}
+
+.about-title-card:hover,
+.about-desc-card:hover{
+transform:translateY(-8px) scale(1.03);
+box-shadow:0 20px 40px rgba(245,158,11,0.2);
+}
+
+.about-title-card:active,
+.about-desc-card:active{
+transform:scale(0.98);
+}
+
+@media(max-width:1000px){
+.monitor-container{flex-direction:column;}
+.data-section{grid-template-columns:1fr;}
+.section{padding:120px 30px 80px;}
+}
+
+</style>
+</head>
+<body>
+
+<div id="mining-particles"></div>
+<div id="floating-orbs"></div>
+
+<div class="navbar">
+<div class="logo-container">
+<img src="img/mio.png" class="logo-img">
+<div class="logo-text">
+MIO
+<small>Mining IoT Overview</small>
+</div>
+</div>
+
+<div class="nav-links">
+<a href="#home">Home</a>
+<a href="#about">About</a>
+<a href="#monitoring">Monitoring</a>
+<a href="#explanation">Explanation</a>
+</div>
+</div>
+
+<section class="welcome" id="home">
+<div class="welcome-content">
+<h1>Welcome to <span>MIO</span></h1>
+<p>
+Mining environmental monitoring system based on IoT to monitor temperature,
+humidity, air quality, light intensity, and alarm systems in real time.
+</p>
+</div>
+</section>
+
+<!-- TAMBAHAN ABOUT -->
+<section class="section reveal" id="about">
+<div class="about-container">
+<div class="about-title-card">
+<h2>What is MIO?</h2>
+</div>
+<div class="about-desc-card">
+<p style="max-width:850px; line-height:1.9; color:#78350f; font-size:18px;">
+MIO (Mining IoT Overview) is an Internet of Things-based system designed to monitor mining environmental conditions in real time including temperature, humidity, gas levels, and light intensity to improve safety and efficiency.
+</p>
+</div>
+</div>
+</section>
+
+
+<section class="section monitor-section reveal" id="monitoring">
+<h2 style="margin-bottom:30px;">Real-Time Monitoring</h2>
+
+<div class="monitor-container">
+
+<div class="data-section">
+<div class="card">
+<h4>BME Temperature</h4>
+<div class="value" id="temperature">-</div>
+</div>
+
+<div class="card">
+<h4>BME Humidity</h4>
+<div class="value" id="humidity">-</div>
+</div>
+
+<div class="card">
+<h4>MQ-135 Air Quality</h4>
+<div class="value" id="gas">-</div>
+</div>
+
+<div class="card">
+<h4>LDR Light</h4>
+<div class="value" id="light">-</div>
+</div>
+
+</div>
+
+<div class="chart-section reveal">
+<canvas id="sensorChart"></canvas>
+</div>
+
+</div>
+
+<div class="buzzer-panel reveal" id="buzzerPanel">
+<div class="buzzer-indicator" id="buzzerLight"></div>
+<div class="buzzer-text" id="buzzerText">SYSTEM SAFE</div>
+</div>
+
+</section>
+
+<!-- TAMBAHAN EXPLANATION -->
+<section class="section reveal" id="explanation">
+<h2 style="margin-bottom:30px;">Monitoring Explanation</h2>
+<div class="data-section">
+
+<div class="card">
+<h4>Temperature</h4>
+<p>Measures heat levels in mining area.</p>
+</div>
+
+<div class="card">
+<h4>Humidity</h4>
+<p>Monitors air moisture levels.</p>
+</div>
+
+<div class="card">
+<h4>Gas</h4>
+<p>Detects harmful gases.</p>
+</div>
+
+<div class="card">
+<h4>Light</h4>
+<p>Measures light intensity.</p>
+</div>
+
+</div>
+</section>
+
+<script>
+
+const reveals=document.querySelectorAll(".reveal");
+const cards=document.querySelectorAll(".card");
+
+function revealOnScroll(){
+const windowHeight=window.innerHeight;
+
+reveals.forEach(el=>{
+if(el.getBoundingClientRect().top < windowHeight-100){
+el.classList.add("active");
+}
+});
+
+cards.forEach((card,index)=>{
+if(card.getBoundingClientRect().top < windowHeight-50){
+setTimeout(()=>{card.classList.add("active");},index*150);
+}
+});
+}
+
+window.addEventListener("scroll",revealOnScroll);
+
+cards.forEach(card=>{
+card.addEventListener("click",()=>{
+card.classList.toggle("expanded");
+});
+});
+
+/* MQTT */
+const client=mqtt.connect("wss://broker.emqx.io:8084/mqtt");
+
+client.on("connect",()=>{
+client.subscribe("gasroyo");
+client.subscribe("ldrroyo");
+client.subscribe("temproyo");
+client.subscribe("humroyo");
+client.subscribe("buzzroyo");
+});
+
+const chart=new Chart(document.getElementById("sensorChart"),{
+type:"line",
+data:{
+labels:[],
+datasets:[
+{label:"Temperature",borderColor:"#f59e0b",data:[],tension:0.4},
+{label:"Gas",borderColor:"#ef4444",data:[],tension:0.4}
+]
+}
+});
+
+let latestTemp=0;
+let latestGas=0;
+
+function updateChart(){
+let time=new Date().toLocaleTimeString();
+
+chart.data.labels.push(time);
+chart.data.datasets[0].data.push(latestTemp);
+chart.data.datasets[1].data.push(latestGas);
+
+if(chart.data.labels.length>15){
+chart.data.labels.shift();
+chart.data.datasets.forEach(d=>d.data.shift());
+}
+
+chart.update();
+}
+
+client.on("message",(topic,message)=>{
+let value=parseFloat(message.toString());
+
+if(topic==="temproyo"){
+latestTemp=value;
+document.getElementById("temperature").innerText=value+" °C";
+}
+
+if(topic==="humroyo"){
+document.getElementById("humidity").innerText=value+" %";
+}
+
+if(topic==="gasroyo"){
+latestGas=value;
+document.getElementById("gas").innerText=value+" PPM";
+}
+
+if(topic==="ldrroyo"){
+document.getElementById("light").innerText=value+" Lux";
+}
+
+if(topic==="buzzroyo"){
+const panel=document.getElementById("buzzerPanel");
+const light=document.getElementById("buzzerLight");
+const text=document.getElementById("buzzerText");
+
+if(value==1){
+text.innerText="ALERT ACTIVE";
+text.style.color="#ef4444";
+light.classList.add("alert-light");
+panel.classList.add("alert-mode");
+}else{
+text.innerText="SYSTEM SAFE";
+text.style.color="#22c55e";
+light.classList.remove("alert-light");
+panel.classList.remove("alert-mode");
+}
+}
+
+updateChart();
+});
+
+/* particle */
+const dustContainer = document.getElementById("mining-particles");
+
+for(let i=0;i<35;i++){
+let d=document.createElement("div");
+d.classList.add("dust");
+
+d.style.left=Math.random()*100+"%";
+d.style.top=(80+Math.random()*20)+"%";
+d.style.animationDuration=(6+Math.random()*6)+"s";
+d.style.width=(3+Math.random()*4)+"px";
+d.style.height=d.style.width;
+
+dustContainer.appendChild(d);
+}
+
+/* tambahan orb */
+const orbContainer = document.getElementById("floating-orbs");
+
+for(let i=0;i<6;i++){
+let orb=document.createElement("div");
+orb.classList.add("orb");
+
+orb.style.left=Math.random()*100+"%";
+orb.style.top=Math.random()*100+"%";
+orb.style.animationDuration=(12+Math.random()*10)+"s";
+
+orbContainer.appendChild(orb);
+}
+
+/* meteor generation removed */
+
+const mouseLight=document.createElement('div');
+mouseLight.classList.add('mouse-light');
+document.body.appendChild(mouseLight);
+
+document.addEventListener('mousemove',(e)=>{
+mouseLight.style.left=e.clientX+'px';
+mouseLight.style.top=e.clientY+'px';
+});
+
+document.addEventListener('click',(e)=>{
+let ripple=document.createElement('div');
+ripple.classList.add('click-ripple');
+ripple.style.left=e.clientX+'px';
+ripple.style.top=e.clientY+'px';
+document.body.appendChild(ripple);
+
+setTimeout(()=>{
+ripple.remove();
+},700);
+
+createBurst(e.clientX,e.clientY);
+});
+
+const miningIcons=['⛏️','⚡','📡','💡','🪨'];
+
+setInterval(()=>{
+let icon=document.createElement('div');
+icon.classList.add('float-icon');
+icon.innerText=miningIcons[Math.floor(Math.random()*miningIcons.length)];
+icon.style.left=Math.random()*100+'%';
+icon.style.top='100%';
+icon.style.animationDuration=(4+Math.random()*3)+'s';
+document.body.appendChild(icon);
+
+setTimeout(()=>{
+icon.remove();
+},7000);
+},1400);
+
+function createBurst(x,y){
+for(let i=0;i<12;i++){
+let spark=document.createElement('div');
+spark.style.position='fixed';
+spark.style.width='6px';
+spark.style.height='6px';
+spark.style.borderRadius='50%';
+spark.style.background='#f59e0b';
+spark.style.left=x+'px';
+spark.style.top=y+'px';
+spark.style.pointerEvents='none';
+spark.style.zIndex='9999';
+document.body.appendChild(spark);
+
+let angle=Math.random()*Math.PI*2;
+let distance=50+Math.random()*80;
+let tx=Math.cos(angle)*distance;
+let ty=Math.sin(angle)*distance;
+
+spark.animate([
+{transform:'translate(0,0)',opacity:1},
+{transform:'translate(${tx}px,${ty}px)',opacity:0}
+],{
+duration:1000,
+easing:'ease-out'
+});
+
+setTimeout(()=>{
+spark.remove();
+},1000);
+}
+}
+
+setInterval(()=>{
+const allCards=document.querySelectorAll('.card');
+const randomCard=allCards[Math.floor(Math.random()*allCards.length)];
+
+randomCard.animate([
+{transform:'scale(1)'},
+{transform:'scale(1.04)'},
+{transform:'scale(1)'}
+],{
+duration:1000
+});
+},3000);
+
+window.addEventListener('scroll',()=>{
+let scrollY=window.scrollY;
+
+document.querySelectorAll('.orb').forEach((orb,index)=>{
+orb.style.transform=`translateY(${scrollY * (0.02 + index * 0.01)}px)`;
+});
+});
+
+</script>
+
+</body>
+</html>
